@@ -60,7 +60,7 @@ def get_agent_cache_queue():
         if (len(agents)==0):
             return 0
         for agent in agents:
-            available_agent_queue.put(agent.id)
+            available_agent_queue.put(agent)
         cache.set(agents_cache_key, available_agent_queue, cache_time)
 
     agent_queue = cache.get(agents_cache_key)

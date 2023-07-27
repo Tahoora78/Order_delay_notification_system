@@ -47,7 +47,7 @@ def delay_order(request):
 
 
 
-def assign_order_to_agent(request, order_id):
+def assign_order_to_agent(request):
     """
     for all orders in delay_order_queue
     1) remove one order from delay_order_queue
@@ -73,7 +73,7 @@ def get_available_agents():
         available_agent_queue = Queue()
         agents = Agent.objects.all()
         for agent in agents:
-            available_agent_queue.put(agent.id)
+            available_agent_queue.put(agent)
         
     cache.set(agents_cache_key, available_agent_queue, cache_time)
     return cache.get(agents_cache_key)
