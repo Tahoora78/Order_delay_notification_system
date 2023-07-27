@@ -6,7 +6,9 @@ from django.core.cache import cache
 from .models import *
 import requests
 from django.db.models import Q
-from queue import Queue
+# from queue import Queue
+from collections import deque
+# from multiprocessing import Queue
 from datetime import timedelta
 from django.db.models import Sum
 import os
@@ -40,7 +42,7 @@ def estimate_new_time():
                 delay_time = calculate_difference_in_minutes(trip.order.registered_time)-trip.order.delivery_time+get_estimated_time()
                 delay_report = DelayReport(
                     order=trip.order, 
-                    state=DELAY_STATES[0],
+                    state=DELAY_STATES[0][0],
                     delay_time = delay_time
                 )
                 delay_report.save()
@@ -49,37 +51,48 @@ def estimate_new_time():
 
 def add_to_agent_cache_queue(parameter):
     agent_queue = cache.get(agents_cache_key)
-    agent_queue.put(parameter)
+    if agent_queue ==None:
+        agent_queue = deque()
+    agent_queue.append(parameter)
     cache.set(agents_cache_key, agent_queue, cache_time)
 
 
 def get_agent_cache_queue():
-    if cache.get(agents_cache_key).empty():
-        available_agent_queue = Queue()
+    agent_queue = cache.get(agents_cache_key)
+    if agent_queue==None:
+        cache.set(agents_cache_key, deque(), cache_time)
+        return 0
+
+    if len(agent_queue)==0:
+        available_agent_queue = deque()
         agents = Agent.objects.filter(busy=False)
         if (len(agents)==0):
             return 0
         for agent in agents:
-            available_agent_queue.put(agent)
+            available_agent_queue.append(agent)
         cache.set(agents_cache_key, available_agent_queue, cache_time)
 
     agent_queue = cache.get(agents_cache_key)
-    parameter = agent_queue.get()
+    parameter = agent_queue.popleft()
     cache.set(agents_cache_key, agent_queue, cache_time)
     return parameter
 
 
 def add_to_delay_order_cache_queue(parameter):
     delay_order_queue = cache.get(delay_order_cache_key)
-    delay_order_queue.put(parameter)
+    if delay_order_queue == None:
+        delay_order_queue = deque()
+    delay_order_queue.append(parameter)
     cache.set(delay_order_cache_key, delay_order_queue, cache_time)
 
 
 def remove_delay_order_cache_queue():
-    if (cache.get(delay_order_cache_key).empty()):
+    delay_order_queue = cache.get(delay_order_cache_key)
+    
+    if (len(delay_order_queue)==0):
         return 0
     delay_order_queue = cache.get(delay_order_cache_key)
-    parameter = delay_order_queue.get()
+    parameter = delay_order_queue.popleft()
     cache.set(delay_order_cache_key, delay_order_queue, cache_time)
     return parameter
 
@@ -91,27 +104,28 @@ def add_to_delay_order_queue():
         if not(trip.order.checked) and calculate_difference_in_minutes(trip.order.registered_time)>trip.order.delivery_time:
             trip.order.check = True
             trip.order.save()
-            
+
             add_to_delay_order_cache_queue(trip.order)
 
-            delay_time = (trip.last_update_time.replace(tzinfo=None) - trip.order.registered_time.replace(tzinfo=None))/60 - trip.order.delivery_time
+            delay_time = calculate_difference_in_minutes(trip.order.registered_time)-trip.order.delivery_time
             delay_report = DelayReport(order=trip.order, state=DELAY_STATES[1][0], delay_time=delay_time)
             delay_report.save()
             
 
-    orders_without_trip = Order.objects.exclude(Q(trip__isnull=False) | Q(checked=True))    
+    orders_without_trip = Order.objects.exclude(Q(trip__isnull=False) and Q(checked=True))    
     for order in orders_without_trip:
         if calculate_difference_in_minutes(order.registered_time)>order.delivery_time:
-            order.check = True
+            order.checked = True
             order.save()
 
+            delay_time = calculate_difference_in_minutes(order.registered_time)-order.delivery_time
             add_to_delay_order_cache_queue(order)
-            delay_report = DelayReport(order=order, state=DELAY_STATES[1][0], delay_time=0)
+            delay_report = DelayReport(order=order, state=DELAY_STATES[1][0], delay_time=delay_time)
             delay_report.save()
-
+    # cache.set(agents_cache_key, deque(), cache_time)
 
 @shared_task
-def assign_order_to_aggent():    
+def assign_order_to_agent_task():    
     delay_order = remove_delay_order_cache_queue()
     agent = get_agent_cache_queue()
     
@@ -131,7 +145,8 @@ def assign_order_to_aggent():
 
 @shared_task
 def get_delay_report():
-    result = DelayReport.objects.values('order__vendor__name', 'delay_time').annotate(total_delay_time=Sum('delay_time')).order_by('delay_time')
+    result = DelayReport.objects.raw('SELECT vendor_delayreports.delay_time , vendor_orders. FROM vendor_delayreports GROUP BY ')
+    result = DelayReport.objects.values('order__vendor__name').annotate(total_delay_time=Sum('delay_time')).order_by('delay_time')
     return result
 
 

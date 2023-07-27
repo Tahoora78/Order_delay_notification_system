@@ -19,7 +19,7 @@ class Agent(models.Model):
     name = models.CharField(max_length=50)
     busy = models.BooleanField(default=False)
     def __str__(self) -> str:
-        return f"{self.name}"
+        return f"{self.name}, {self.busy}"
 
 
 class Vendor(models.Model):
@@ -38,7 +38,7 @@ class Order(models.Model):
     """
     updated_delivery_time = models.IntegerField(default=0)
     checked = models.BooleanField(default=False)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, null=True)
 
     def __str__(self) -> str:
         return f"{self.name} ,{self.delivery_time}, {self.registered_time}, {self.updated_delivery_time}, {self.checked}"

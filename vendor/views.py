@@ -9,6 +9,7 @@ from datetime import timezone
 import datetime
 from django.db.models.functions import Extract, Now, Trunc
 from .tasks import *
+from collections import deque
 
 
 
@@ -40,6 +41,7 @@ def delay_order(request):
         - are in trip table with state="delivered" --> add to delay queue has_delay=true
         save to delay_report table
     """
+    # cache.set(delay_order_cache_key, deque(), cache_time)
     estimate_new_time()
     add_to_delay_order_queue()
 
@@ -56,7 +58,7 @@ def assign_order_to_agent(request):
     4) change the trip order status to "assigned"
     5) change the order table check to false
     """
-    assign_order_to_aggent()
+    assign_order_to_agent_task()
     return HttpResponse("Delay ordered assigned to available agents")
     
 
