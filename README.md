@@ -16,7 +16,8 @@ I have used Celery for this project to reduce the load on the server.
 
 
 
-To run this program 
+To run this program you can use this command:
+docker-compose run
 
 
 # Prerequisites
