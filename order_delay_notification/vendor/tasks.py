@@ -2,14 +2,19 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 from celery import shared_task
 from django.core.cache import cache
-from .views import delay_order_cache_key, agents_cache_key,cache_time
+# from .views import delay_order_cache_key, agents_cache_key,cache_time
 from .models import *
 import requests
 from django.db.models import Q
 from queue import Queue
 from datetime import timedelta
 from django.db.models import Sum
+import os
 
+# os.environ[ 'DJANGO_SETTINGS_MODULE' ] = "order_delay_notification.settings"
+agents_cache_key = 'available_agents'
+delay_order_cache_key = 'delay_orders'
+cache_time = 86400
 
 def calculate_difference_in_minutes(time_):
     difference = (datetime.datetime.now().replace(tzinfo=None) - time_.replace(tzinfo=None)).total_seconds()/60

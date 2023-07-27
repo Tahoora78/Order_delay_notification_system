@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .tasks import test_func
 from queue import Queue
 from django.core.cache import cache
 from .models import Agent, Order, Trip, ORDER_STATES, DelayReport, DELAY_STATES
@@ -9,7 +8,7 @@ from django.db.models import Q
 from datetime import timezone
 import datetime
 from django.db.models.functions import Extract, Now, Trunc
-from tasks import *
+from .tasks import *
 
 
 
@@ -80,6 +79,6 @@ def get_available_agents():
     return cache.get(agents_cache_key)
 
 
-def recieve_endor_delay_reports(request):
+def recieve_vendor_delay_reports(request):
     result = get_delay_report()
     return HttpResponse(result)

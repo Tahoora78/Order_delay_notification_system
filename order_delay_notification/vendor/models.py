@@ -38,7 +38,7 @@ class Order(models.Model):
     """
     updated_delivery_time = models.IntegerField(default=0)
     checked = models.BooleanField(default=False)
-    vendor = models.ForeignKey(Vendor)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
         return f"{self.name} ,{self.delivery_time}, {self.registered_time}, {self.updated_delivery_time}, {self.checked}"

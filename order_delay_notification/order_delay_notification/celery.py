@@ -8,10 +8,10 @@ from django.conf import settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'order_delay_notification.settings')
 
 
-app = Celery('order_delay_notification')
+app = Celery("order_delay_notification")
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-app.conf.enable_utc = False
+# app.conf.enable_utc = False
 
 # app.conf.update(timezone = 'Asia/Kolkata')
 
