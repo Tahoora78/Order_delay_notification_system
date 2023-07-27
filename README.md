@@ -14,7 +14,11 @@ docker-compose up
 
 I have used Celery for this project to reduce the load on the server.
 
+by delay_order:
+all orders that has been delayed will be added to delayReport table and queue
 
+by assign_agent_to_order:
+an agent would be assigned to one of the order of delay_order
 
 To run this program you can use this command:
 docker-compose run
