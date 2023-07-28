@@ -145,8 +145,8 @@ def assign_order_to_agent_task():
 
 @shared_task
 def get_delay_report():
-    result = DelayReport.objects.raw('SELECT vendor_delayreports.delay_time , vendor_orders. FROM vendor_delayreports GROUP BY ')
-    result = DelayReport.objects.values('order__vendor__name').annotate(total_delay_time=Sum('delay_time')).order_by('delay_time')
+    orders_with_delay_sum = Order.objects.values('vendor').annotate(total_delay_time=Sum('delayreport__delay_time'))
+    result = orders_with_delay_sum.values('vendor__name', 'total_delay_time').order_by('total_delay_time')
     return result
 
 
